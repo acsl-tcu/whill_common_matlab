@@ -14,6 +14,9 @@ classdef SensorFetcher < handle
         timeout = 0.05;
 
     end
+    properties (Constant)
+        t_cr = 0.495; % Tread width of CR
+    end
 
     methods
         function obj = SensorFetcher(mode,vehicleType,sensorIdx,baseSens)
@@ -28,7 +31,6 @@ classdef SensorFetcher < handle
 
         function [data,Plant] = getSensorData(obj,sensorSubs,whillSubs)
             % subscriberからセンサ値を取得
-            % Plantには自己位置を追加予定
             doProcessing = 0;
             data = struct("LIDAR",[],"GNSS",[],"CAMERA",[]);
             Plant = struct("X",[.0],"Y",[.0],"Z",[.0], ...
@@ -64,13 +66,17 @@ classdef SensorFetcher < handle
             if ~isempty(whillret)
                 switch obj.mode
                     case 2
-                        Plant.odom(1) = whillret.twist.twist.linear.x; % V
-                        Plant.odom(2) = whillret.twist.twist.angular.z; % Omega
+                        Plant.odom(1) = whillret.twist.twist.linear.x; % Linear velocity V (m/s)
+                        Plant.odom(2) = whillret.twist.twist.angular.z; % Angular velocity Omega (rad/s)
+                        Plant.odom(3) = Plant.odom(1) - (obj.t_cr/2) * Plant.odom(2); % LeftMSpeed
+                        Plant.odom(4) = Plant.odom(1) + (obj.t_cr/2) * Plant.odom(2); % RightMSpeed
                     case 3
                         switch obj.vehicleType
                             case 1
-                                Plant.odom(1) = whillret.x; % LeftMSpeed
-                                Plant.odom(2) = whillret.y; % RightMSpeed
+                                Plant.odom(1) = (-whillret.x + whillret.y) * 1000/3600 / 2; % V (m/s)
+                                Plant.odom(2) = -(whillret.x + whillret.y) * 1000/3600 / obj.t_cr; % Omega (rad/s)
+                                Plant.odom(3) = whillret.x * 1000/3600; % LeftMSpeed
+                                Plant.odom(4) = whillret.y * 1000/3600; % RightMSpeed                                
                             case 2
                                 Plant.odom(1) = whillret.right_motor_speed; % RightMSpeed
                                 Plant.odom(2) = whillret.left_motor_speed; % LeftMSpeed

@@ -50,7 +50,7 @@ function DataPlotter(DATAPath,cfg)
     %% 計算時間
     [~, ax, lgd] = setFigure('Computation time',Count);
     switch mode
-        case {2,3}
+        case {0,1,2,3}
             CT(1) = 0;
             for i = 2:numel(T)
                 CT(i) = T(i)-T(i-1); % Computation time

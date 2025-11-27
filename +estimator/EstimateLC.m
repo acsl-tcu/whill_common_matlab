@@ -29,7 +29,7 @@ classdef EstimateLC < handle
                                             'zRoi', [-1.5 1]), ...  % Observation z roi [z_min(m) z_max(m)]
                          'estimate', struct('xRoi', [-1 8], ...     % Estimation range [2*x_min(m) 2*x_max(m)] (Ego positon center)
                                             'yRoi', [-3 3]), ...    % Estimation range [2*y_min(m) 2*y_max(m)] (Ego positon center)
-                         'grid',     struct('gridNum', [100 30]));  % Grid size in the estimation range [x_grid_num(-) y_grid_num(-)]
+                         'gridNum', [100 30]);                      % Grid size in the estimation range [x_grid_num(-) y_grid_num(-)]
 
         % -----JPDAF parameter-------------------------------------
         pms_JPDAF = struct('positionSelector', [1 0 0 0 0 0; 0 0 1 0 0 0; 0 0 0 0 0 0], ...
@@ -105,9 +105,9 @@ classdef EstimateLC < handle
             
             persistent  current
             if obj.pmsSaveFlag
-                result.pms_clstPCA  = {obj.pms_clstPCA};
-                result.pms_map      = {obj.pms_ROI};
-                result.pms_JPDAF    = {obj.pms_JPDAF};
+                result.pms_clstPCA = obj.pms_clstPCA;
+                result.pms_map     = obj.pms_ROI;
+                result.pms_JPDAF   = obj.pms_JPDAF;
                 obj.pmsSaveFlag = false;
             end
 
@@ -123,7 +123,7 @@ classdef EstimateLC < handle
             current.yaw   = Plant.Yaw;   
 
             current.time = T;
-            current.dt    = current.time - obj.T_old;   % 経過時間間隔を評価
+            current.dt   = current.time - obj.T_old;   % 経過時間間隔を評価
 
             % -----Generating MEX function---------------------------------
             if obj.estimatorMexFlag == true

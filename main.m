@@ -18,7 +18,7 @@ sensor(5) = false; % Matching (Only EXP)
 base_sensor = 1; % Standard sensor you use mainly. No standard:0, LiDAR:1, GNSS:2, Camera:3
 tspan = 0.05; % Sensor frequency which is corresponded to standard sensor
 %% Mode configurations
-mode = 1; % 1:Offline, 2:Gazebo simulation, 3:Real exp.
+mode = 0; % 0:Numerical simulation, 1:Offline, 2:Gazebo simulation, 3:Real exp.
 % Offline: Path to MAT file
 % The number of time series data points required for execution is automatically detected.
 offlinePath = "/path/to/your/userLocal.mat"; 
@@ -42,11 +42,12 @@ cameraparamPath = "./cameracalibparam/internal_param_fix.mat";
 
 % You can supply your own class instead of default if you need.
 % addpath(genpath("./MyEstimate"))
+plantcontainer = plant.PlantWH();
 estimator = estimator.Estimate2(mode,offlinePath);
 % Camera LiDAR Fusion package
 % addpath(genpath("./LiDARCamera"))
 % estimator = estimator.EstimateLC(mode,offlinePath,calibparamPath,cameraparamPath);
-controller = controller.Control2();
+controller = controller.ControlDiff();
 logger = logger.DataLogger(Datadir,'tmp');
 
 % Activation paralell worker
@@ -65,6 +66,7 @@ cfg = struct( ...
     "offlinePath" , offlinePath, ...
     "tend"        , tend, ...
     "rosNamespace", "matlab", ...
+    "plant"       , plantcontainer, ...
     "estimator"   , estimator, ...
     "controller"  , controller, ...
     "logger"      , logger, ...

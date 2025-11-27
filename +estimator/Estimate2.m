@@ -52,8 +52,8 @@ classdef Estimate2 < handle
             
 
             % send to Controller
-            % send.pose = [Plant.X, Plant.Y, Plant.Yaw];
-            send = [];
+            send.pose = [Plant.X, Plant.Y, Plant.Yaw];
+            % send = [];
             
 
 

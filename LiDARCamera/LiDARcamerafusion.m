@@ -156,7 +156,7 @@ function [ObjectData,Objectpt,new_labels,ObjectData_fromCamera,ObjectData_fromLi
             end
         end
     end
-    if ~iscell(ObjectData)
+    if any(any(~cellfun(@isempty, ObjectData)))
         obj4 = ObjectData(:,4);
         isEmpty = cellfun(@isempty, obj4);
         nonEmpty = obj4(~isEmpty);
@@ -165,6 +165,7 @@ function [ObjectData,Objectpt,new_labels,ObjectData_fromCamera,ObjectData_fromLi
         [uniqStr, ~, sameidx] = unique(S);
         counts = histcounts(sameidx, 1:(numel(uniqStr)+1));
         dupGroups = find(counts > 1);
+        % カメラで同一物体と識別されているクラスタをまとめる
         for i = dupGroups
             sameNonEmpty = (sameidx == i);            % 非空の中での位置
             sameCells = find(~isEmpty);               % 非空の元の行番号
@@ -172,14 +173,17 @@ function [ObjectData,Objectpt,new_labels,ObjectData_fromCamera,ObjectData_fromLi
             for j = 2 : size(sameCells,1)
                 if any(min(ObjectData{sameCells(1), 1}(:,1)) <= ObjectData{sameCells(j), 1}(:,1)) && any(max(ObjectData{sameCells(1), 1}(:,1)) >= ObjectData{sameCells(j), 1}(:,1)) && ...
                    any(min(ObjectData{sameCells(1), 1}(:,2)) <= ObjectData{sameCells(j), 1}(:,2)) && any(max(ObjectData{sameCells(1), 1}(:,2)) >= ObjectData{sameCells(j), 1}(:,2))
+                    ObjectData_fromLiDAR{sameCells(1), 1} = [ObjectData_fromLiDAR{sameCells(1), 1}; ObjectData_fromLiDAR{sameCells(j), 1}];
+                    ObjectData_fromLiDAR{sameCells(j),1} = [];
                     ObjectData{sameCells(1), 1} = [ObjectData{sameCells(1), 1}; ObjectData{sameCells(j), 1}];
                     ObjectData{sameCells(j),1} = [];
                 end
             end
         end
+        ObjectData_fromLiDAR(cellfun(@isempty, ObjectData_fromLiDAR(:,1)),:) = [];
         ObjectData(cellfun(@isempty, ObjectData(:,1)),:) = [];
     
-        Objectpt = cell2mat(ObjectData(:,1));
+        Objectpt = cell2mat(ObjectData(:,1)); % ObjectDataに保存されている点群
     else
         Objectpt = [];
     end

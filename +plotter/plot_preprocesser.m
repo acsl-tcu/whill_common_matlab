@@ -13,7 +13,7 @@ function plot_preprocesser(folderPath,mode)
     RawData = struct("LiDAR",[],"GNSS",[],"CAMERA",[], ...
         "X",[],"Y",[],"Z",[],"Roll",[],"Pitch",[],"Yaw",[],"odom",[]);
     BaseName = fieldnames(RawData);    
-    if mode == 1
+    if mode == 1 || mode == 0
         numBase = 0;
     else
         numBase = numel(BaseName);
@@ -27,7 +27,7 @@ function plot_preprocesser(folderPath,mode)
     % T_Est = zeros(numTSdata,1);
     for n = 1:numTSdata
         % Sensor, Plant
-        if mode ~= 1
+        if mode ~= 1 && mode ~= 0
             EstResult.(BaseName{1}){n,1} = Estimate{n,1}.RawData.LIDAR;
             EstResult.(BaseName{2}){n,1} = Estimate{n,1}.RawData.GNSS;
             EstResult.(BaseName{3}){n,1} = Estimate{n,1}.RawData.CAMERA;

@@ -21,6 +21,9 @@ classdef DirectMode < session.SessionStrategy
                     obj.numStep = cfg.tend/cfg.tspan;
                 end
             end
+            if cfg.modeNumber == 0
+                obj.numStep = cfg.tend/cfg.tspan;
+            end
         end
         function start(obj)
             utils.waitPressEnterkey(obj.Stopper); % start            

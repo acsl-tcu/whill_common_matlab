@@ -2,6 +2,8 @@ classdef ModeFactory
     methods (Static)
         function modeObj = build(cfg)
             switch cfg.modeNumber
+                case 0
+                    modeObj = mode.NumericalSMMode(cfg);
                 case 1
                     modeObj = mode.OfflineMode(cfg);
                 case 2
