@@ -23,7 +23,8 @@ classdef WheelchairSystem < handle
             obj.Est   = cfg.estimator;
             obj.Ctrl  = cfg.controller;
             obj.DLog  = cfg.logger;
-            obj.Timer = utils.TimeTracker(cfg.tspan);
+            obj.Timer = rateControl(1/cfg.tspan);
+            obj.Timer.OverrunAction = cfg.overrunAct; % 'slip' or 'drop'
             obj.Mode  = modeObj;
             obj.SMgr  = SMgr;
         end
@@ -32,15 +33,15 @@ classdef WheelchairSystem < handle
             c = onCleanup(@()obj.Mode.shutdown());
             obj.Mode.setup();
             obj.SMgr.start();
-            obj.Timer.start();
+            reset(obj.Timer);
             while obj.SMgr.isWorking(obj.cnt+1)
                 obj.cnt = obj.cnt + 1;
                 % Main process
                 [sens,Plant] = obj.Mode.receiveData();
-                [resEst,sendData]  = obj.Est.main(sens, Plant,obj.Timer.elapsed());
-                resEst.T = posixtime(datetime('now'));
-                [resCtrl]  = obj.Ctrl.main(sendData,obj.Timer.elapsed());
-                resCtrl.T = posixtime(datetime('now'));
+                [resEst,sendData]  = obj.Est.main(sens, Plant,obj.Timer.TotalElapsedTime);
+                resEst.T = posixtime(datetime('now','TimeZone','local'));
+                [resCtrl]  = obj.Ctrl.main(sendData,obj.Timer.TotalElapsedTime);
+                resCtrl.T = posixtime(datetime('now','TimeZone','local'));
                 cmd = struct('V',resCtrl.V,'sequence',obj.cnt);
                 obj.Mode.sendData(cmd);
 
@@ -50,8 +51,8 @@ classdef WheelchairSystem < handle
                 resCtrl.sequence = obj.cnt;
                 result = struct('Estimator',resEst, 'Controller',resCtrl);
                 obj.DLog.addData(result);
-                drawnow
-                obj.Timer.wait();
+                drawnow limitrate
+                waitfor(obj.Timer);
             end
             obj.SMgr.stop();
             obj.DLog.stop();

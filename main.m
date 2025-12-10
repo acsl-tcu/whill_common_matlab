@@ -16,15 +16,15 @@ sensor(3) = false; % Camera
 sensor(4) = true; % SLAM
 sensor(5) = false; % Matching (Only EXP)
 base_sensor = 1; % Standard sensor you use mainly. No standard:0, LiDAR:1, GNSS:2, Camera:3
-tspan = 0.05; % Sensor frequency which is corresponded to standard sensor
+%% Timer configurations
+tspan = 0.05; %(sec) Sensor frequency which is corresponded to standard sensor
+overrunAct = 'slip'; % 'slip'(recommend) or 'drop'
 %% Mode configurations
-mode = 0; % 0:Numerical simulation, 1:Offline, 2:Gazebo simulation, 3:Real exp.
+mode = 3; % 0:Numerical simulation, 1:Offline, 2:Gazebo simulation, 3:Real exp.
 % Offline: Path to MAT file
 % The number of time series data points required for execution is automatically detected.
 offlinePath = "/path/to/your/userLocal.mat"; 
 tend = 20; % Offline: If NO MAT file is loaded, set any time value (sec).
-isParallel = false;
-isMultiPC = false;
 %% ROS2 configurations
 RID = 11;
 %% Enable Manual Control using Joystick
@@ -47,7 +47,7 @@ estimator = estimator.Estimate2(mode,offlinePath);
 % Camera LiDAR Fusion package
 % addpath(genpath("./LiDARCamera"))
 % estimator = estimator.EstimateLC(mode,offlinePath,calibparamPath,cameraparamPath);
-controller = controller.ControlDiff();
+controller = controller.Control2();
 logger = logger.DataLogger(Datadir,'tmp');
 
 % Activation paralell worker
@@ -55,8 +55,8 @@ logger = logger.DataLogger(Datadir,'tmp');
 
 cfg = struct( ...
     "modeNumber"  , mode, ...
-    "isParallel"  , isParallel, ...
-    "isMultiPC"   , isMultiPC, ...
+    "isParallel"  , false, ...
+    "isMultiPC"   , false, ...
     "RID"         , RID, ...
     "sensorIdx"   , sensor, ...
     "base_sensor" , base_sensor, ...
@@ -70,7 +70,8 @@ cfg = struct( ...
     "estimator"   , estimator, ...
     "controller"  , controller, ...
     "logger"      , logger, ...
-    "manualCon"   , manualCon);
+    "manualCon"   , manualCon, ...
+    "overrunAct"  , overrunAct);
 
 sys = core.SystemFactory.build(cfg);
 sys.run();

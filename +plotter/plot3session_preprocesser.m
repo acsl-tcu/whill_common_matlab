@@ -42,28 +42,60 @@ function plot3session_preprocesser(folderPath,keepAllSequences)
         EstResult.(BaseName{10})(n,:) = Estimate{n,1}.Plant.odom;
         
         for m = 1:numAllEstVar-numBase
-            % if n ~= 1
-            %     try
-            %         % User difined data
-            %         EstResult.(udVarName{m})(n,1) = Estimate{n,1}.(udVarName{m});
-            %     catch
-            %         EstResult.(udVarName{m})(n,1) = [];
-            %     end
-            % else
-            %     try
-            %         % User difined data
-            %         EstResult.(udVarName{m}) = Estimate{n,1}.(udVarName{m});
-            %     catch
-            %         EstResult.(udVarName{m}) = [];
-            %     end
+            % % if n ~= 1
+            % %     try
+            % %         % User difined data
+            % %         EstResult.(udVarName{m})(n,1) = Estimate{n,1}.(udVarName{m});
+            % %     catch
+            % %         EstResult.(udVarName{m})(n,1) = [];
+            % %     end
+            % % else
+            % %     try
+            % %         % User difined data
+            % %         EstResult.(udVarName{m}) = Estimate{n,1}.(udVarName{m});
+            % %     catch
+            % %         EstResult.(udVarName{m}) = [];
+            % %     end
+            % % end
+            % try
+            %     % User difined data
+            %     EstResult.(udVarName{m}){n,1} = Estimate{n,1}.(udVarName{m});
+            % catch
+            %     EstResult.(udVarName{m}){n,1} = [];
             % end
-            try
-                % User difined data
-                EstResult.(udVarName{m}){n,1} = Estimate{n,1}.(udVarName{m});
-            catch
-                EstResult.(udVarName{m}){n,1} = [];
-            end
-                
+            if n == 1
+                try 
+                    try
+                        % User difined data
+                        EstResult.(udVarName{m})(n,1) = Estimate{n,1}.(udVarName{m});
+                    catch
+                        EstResult.(udVarName{m}){n,1} = Estimate{n,1}.(udVarName{m});
+                    end
+                catch
+                    try
+                        % User difined data
+                        EstResult.(udVarName{m})(n,1) = [];
+                    catch
+                        EstResult.(udVarName{m}){n,1} = [];
+                    end
+                end  
+            else
+                try 
+                    try
+                        % User difined data
+                        EstResult.(udVarName{m})(n,1) = Estimate{n,1}.(udVarName{m});
+                    catch
+                        EstResult.(udVarName{m}){n,1} = Estimate{n,1}.(udVarName{m});
+                    end
+                catch
+                    try
+                        % User difined data
+                        EstResult.(udVarName{m})(n,1) = [];
+                    catch
+                        EstResult.(udVarName{m}){n,1} = [];
+                    end
+                end
+            end                
         end
         EstResult.sequence(n,1) = Estimate{n,1}.send.sequence;
         seq_Est(n) = Estimate{n,1}.send.sequence;

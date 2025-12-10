@@ -41,26 +41,59 @@ function plot_preprocesser(folderPath,mode)
         end
         
         for m = 1:numAllEstVar-numBase
-            % if n ~= 1
-            %     try
-            %         % User difined data
-            %         EstResult.(udVarName{m})(n,1) = Estimate{n,1}.(udVarName{m});
-            %     catch
-            %         EstResult.(udVarName{m})(n,1) = [];
-            %     end
-            % else
-            %     try
-            %         % User difined data
-            %         EstResult.(udVarName{m}) = Estimate{n,1}.(udVarName{m});
-            %     catch
-            %         EstResult.(udVarName{m}) = [];
-            %     end
+            % % if n ~= 1
+            % %     try
+            % %         % User difined data
+            % %         EstResult.(udVarName{m})(n,1) = Estimate{n,1}.(udVarName{m});
+            % %     catch
+            % %         EstResult.(udVarName{m})(n,1) = [];
+            % %     end
+            % % else
+            % %     try
+            % %         % User difined data
+            % %         EstResult.(udVarName{m}) = Estimate{n,1}.(udVarName{m});
+            % %     catch
+            % %         EstResult.(udVarName{m}) = [];
+            % %     end
+            % % end
+            % try
+            %     % User difined data
+            %     EstResult.(udVarName{m}){n,1} = Estimate{n,1}.(udVarName{m});
+            % catch
+            %     EstResult.(udVarName{m}){n,1} = [];
             % end
-            try
-                % User difined data
-                EstResult.(udVarName{m}){n,1} = Estimate{n,1}.(udVarName{m});
-            catch
-                EstResult.(udVarName{m}){n,1} = [];
+            if n == 1
+                try 
+                    try
+                        % User difined data
+                        EstResult.(udVarName{m})(n,1) = Estimate{n,1}.(udVarName{m});
+                    catch
+                        EstResult.(udVarName{m}){n,1} = Estimate{n,1}.(udVarName{m});
+                    end
+                catch
+                    try
+                        % User difined data
+                        EstResult.(udVarName{m})(n,1) = [];
+                    catch
+                        EstResult.(udVarName{m}){n,1} = [];
+                    end
+                end  
+            else
+                try 
+                    try
+                        % User difined data
+                        EstResult.(udVarName{m})(n,1) = Estimate{n,1}.(udVarName{m});
+                    catch
+                        EstResult.(udVarName{m}){n,1} = Estimate{n,1}.(udVarName{m});
+                    end
+                catch
+                    try
+                        % User difined data
+                        EstResult.(udVarName{m})(n,1) = [];
+                    catch
+                        EstResult.(udVarName{m}){n,1} = [];
+                    end
+                end
             end
                 
         end

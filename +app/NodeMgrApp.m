@@ -6,7 +6,7 @@ classdef NodeMgrApp < handle
         Timer
         DLog
         SMgr
-        TimerCB
+        % TimerCB
         cmd
         checkBin = 1;
     end
@@ -37,59 +37,82 @@ classdef NodeMgrApp < handle
             fname = strcat(tempdir,cfg.sharedMemKey);
             obj.CmdSHM  = bridge.SharedMem(fname+"cmd.bin",obj.checkBin);
             obj.SensSHM = bridge.SharedMem(fname+"sensor.bin",obj.checkBin,obj.sensorVars);
-            obj.Timer  = utils.TimeTracker(cfg.tspan);
+            obj.Timer  = rateControl(1/cfg.tspan);
             obj.DLog = cfg.logger;
             obj.SMgr = session.SessionManager.build(cfg,session.SessionManager.initiator);
-            % Timer callback configuration
-            delete(timerfindall)
-            obj.TimerCB = timer( ...
-                'ExecutionMode','fixedRate', ...
-                'Period',        cfg.tspan, ...
-                'BusyMode',      'drop', ...
-                'TimerFcn',      @(~,~)obj.step(), ...
-                'ErrorFcn',      @(~,~)obj.err(), ...
-                'StopFcn',       @(~,~)obj.stop());
+            % % Timer callback configuration
+            % delete(timerfindall)
+            % obj.TimerCB = timer( ...
+            %     'ExecutionMode','fixedRate', ...
+            %     'Period',        cfg.tspan, ...
+            %     'BusyMode',      'drop', ...
+            %     'TimerFcn',      @(~,~)obj.step(), ...
+            %     'ErrorFcn',      @(~,~)obj.err(), ...
+            %     'StopFcn',       @(~,~)obj.stop());
         end
         function run(obj)
+            c = onCleanup(@()obj.Mode.shutdown());
             obj.Mode.setup();
             obj.SMgr.start();
-            obj.Timer.start();
-            start(obj.TimerCB)
-        end
-    end
-    methods(Access=private)
-        function step(obj,~,~)
-            if ~obj.SMgr.Stopper.UserData, stop(obj.TimerCB); end
-            [sens,Plant] = obj.Mode.receiveData();
-            result.sequence_sens = obj.SensSHM.write(obj.encodeSensor(sens,Plant));
-            [currentCmd, ok] = obj.CmdSHM.read();
-            if ok
-                obj.cmd = currentCmd;
-                obj.Mode.sendData(obj.cmd);
-                result.sequence_cmd = obj.cmd.sequence;
-            elseif ~isempty(obj.cmd)
-                result.sequence_cmd = obj.cmd.sequence;
-            else
-                result.sequence_cmd = uint32(0);
+            reset(obj.Timer)
+            % start(obj.TimerCB)
+            while obj.SMgr.Stopper.UserData
+                [sens,Plant] = obj.Mode.receiveData();
+                result.sequence_sens = obj.SensSHM.write(obj.encodeSensor(sens,Plant));
+                [currentCmd, ok] = obj.CmdSHM.read();
+                if ok
+                    obj.cmd = currentCmd;
+                    obj.Mode.sendData(obj.cmd);
+                    result.sequence_cmd = obj.cmd.sequence;
+                elseif ~isempty(obj.cmd)
+                    result.sequence_cmd = obj.cmd.sequence;
+                else
+                    result.sequence_cmd = uint32(0);
+                end
+                result.T = posixtime(datetime('now','TimeZone','local'));
+                obj.DLog.addData(result)
+                drawnow limitrate
+                waitfor(obj.Timer)
             end
-            result.T = posixtime(datetime('now'));
-            obj.DLog.addData(result)
-            drawnow
-        end
-        % function start(obj,~,~)
-        % 
-        % end
-        function stop(obj,~,~)
-            c = onCleanup(@()obj.Mode.shutdown());
             obj.SMgr.stop();
             disp('Exporting data.');
             obj.DLog.stop();
             disp('Node session has done.')
-            delete(obj.TimerCB)
         end
-        function err(obj,~,~)
-            disp('Error has detected. Stop the system.')
-        end
+    end
+    methods(Access=private)
+        % function step(obj,~,~)
+        %     if ~obj.SMgr.Stopper.UserData, stop(obj.TimerCB); end
+        %     [sens,Plant] = obj.Mode.receiveData();
+        %     result.sequence_sens = obj.SensSHM.write(obj.encodeSensor(sens,Plant));
+        %     [currentCmd, ok] = obj.CmdSHM.read();
+        %     if ok
+        %         obj.cmd = currentCmd;
+        %         obj.Mode.sendData(obj.cmd);
+        %         result.sequence_cmd = obj.cmd.sequence;
+        %     elseif ~isempty(obj.cmd)
+        %         result.sequence_cmd = obj.cmd.sequence;
+        %     else
+        %         result.sequence_cmd = uint32(0);
+        %     end
+        %     result.T = posixtime(datetime('now','TimeZone','local'));
+        %     obj.DLog.addData(result)
+        %     drawnow
+        % end
+        % % function start(obj,~,~)
+        % % 
+        % % end
+        % function stop(obj,~,~)
+        %     c = onCleanup(@()obj.Mode.shutdown());
+        %     obj.SMgr.stop();
+        %     disp('Exporting data.');
+        %     obj.DLog.stop();
+        %     disp('Node session has done.')
+        %     delete(obj.TimerCB)
+        % end
+        % function err(obj,~,~)
+        %     disp('Error has detected. Stop the system.')
+        % end
         function d = encodeSensor(obj, sensor, Plant)
             names = obj.sensorVars(:,1);
         

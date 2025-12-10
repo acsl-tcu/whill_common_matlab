@@ -9,7 +9,7 @@ classdef EstimatorApp < handle
         sensordata
         Plant
         SMgr
-        TimerCB
+        % TimerCB
         Spr
         seq
         checkBin = 1;
@@ -39,52 +39,70 @@ classdef EstimatorApp < handle
             fname = strcat(tempdir,cfg.sharedMemKey);
             obj.EstSHM  = bridge.SharedMem(fname+"est.bin",obj.checkBin,obj.estVars);
             obj.SensSHM = bridge.SharedMem(fname+"sensor.bin",obj.checkBin);            
-            obj.Timer  = utils.TimeTracker(cfg.tspan);
+            obj.Timer  = rateControl(1/cfg.tspan);
             obj.DLog = cfg.logger;
             obj.SMgr = session.SessionManager.build(cfg,session.SessionManager.participant);
-            % Timer callback configuration
-            delete(timerfindall)
-            obj.TimerCB = timer( ...
-                'ExecutionMode','fixedRate', ...
-                'Period',        cfg.tspan, ...
-                'BusyMode',      'drop', ...
-                'TimerFcn',      @(~,~)obj.step(), ...
-                'ErrorFcn',      @(~,~)obj.err(), ...
-                'StopFcn',       @(~,~)obj.stop());
+            % % Timer callback configuration
+            % delete(timerfindall)
+            % obj.TimerCB = timer( ...
+            %     'ExecutionMode','fixedRate', ...
+            %     'Period',        cfg.tspan, ...
+            %     'BusyMode',      'drop', ...
+            %     'TimerFcn',      @(~,~)obj.step(), ...
+            %     'ErrorFcn',      @(~,~)obj.err(), ...
+            %     'StopFcn',       @(~,~)obj.stop());
         end
         function run(obj)
             disp('Estimator is ready to run and waiting for a Node session.')
             obj.SMgr.start();
             disp('Executing session...');
-            obj.Timer.start();
-            start(obj.TimerCB)
-        end
-        
-    end
-    methods(Access=private)
-        function step(obj,~,~)
-            if ~obj.SMgr.isWorking, stop(obj.TimerCB); end
-            [sens, ok] = obj.SensSHM.read();
-            if ok % Reader finished correctly
-                [obj.sensordata,obj.Plant] = obj.decodeSensor(sens);
-                obj.seq = sens.sequence;
+            reset(obj.Timer)
+            % start(obj.TimerCB)
+            while obj.SMgr.isWorking
+                [sens, ok] = obj.SensSHM.read();
+                if ok % Reader finished correctly
+                    [obj.sensordata,obj.Plant] = obj.decodeSensor(sens);
+                    obj.seq = sens.sequence;
+                end
+                if ~isempty(obj.sensordata) && ~isempty(obj.Plant)
+                    [result,sendData] = obj.Est.main(obj.sensordata, obj.Plant,obj.Timer.TotalElapsedTime);  % Estimator
+                    sendData.sequence = obj.EstSHM.write(sendData,obj.seq); % Send to Controller
+                    result.send = sendData;
+                    result.T = posixtime(datetime('now','TimeZone','local'));
+                    obj.DLog.addData(result);
+                end
+                waitfor(obj.Timer)
             end
-            if ~isempty(obj.sensordata) && ~isempty(obj.Plant)
-                [result,sendData] = obj.Est.main(obj.sensordata, obj.Plant,obj.Timer.elapsed());  % Estimator
-                sendData.sequence = obj.EstSHM.write(sendData,obj.seq); % Send to Controller
-                result.send = sendData;
-                result.T = posixtime(datetime('now'));
-                obj.DLog.addData(result);
-            end
-        end
-        function stop(obj,~,~)
             disp('Exporting data.');
             obj.DLog.stop();
             disp('Finished.')
         end
-        function err(obj,~,~)
-            disp('Error has detected. Stop the system.')
-        end
+        
+    end
+    methods(Access=private)
+        % function step(obj,~,~)
+        %     if ~obj.SMgr.isWorking, stop(obj.TimerCB); end
+        %     [sens, ok] = obj.SensSHM.read();
+        %     if ok % Reader finished correctly
+        %         [obj.sensordata,obj.Plant] = obj.decodeSensor(sens);
+        %         obj.seq = sens.sequence;
+        %     end
+        %     if ~isempty(obj.sensordata) && ~isempty(obj.Plant)
+        %         [result,sendData] = obj.Est.main(obj.sensordata, obj.Plant,obj.Timer.elapsed());  % Estimator
+        %         sendData.sequence = obj.EstSHM.write(sendData,obj.seq); % Send to Controller
+        %         result.send = sendData;
+        %         result.T = posixtime(datetime('now','TimeZone','local'));
+        %         obj.DLog.addData(result);
+        %     end
+        % end
+        % function stop(obj,~,~)
+        %     disp('Exporting data.');
+        %     obj.DLog.stop();
+        %     disp('Finished.')
+        % end
+        % function err(obj,~,~)
+        %     disp('Error has detected. Stop the system.')
+        % end
         function [sensordata, Plant] = decodeSensor(obj,d)
             names = fieldnames(d);
             sensordata = struct("LIDAR",[],"GNSS",[],"CAMERA",[]);
