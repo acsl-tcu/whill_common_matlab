@@ -17,7 +17,8 @@ classdef ROS2CommManager < handle
         gSensorMsgtypeSubs = {'sensor_msgs/PointCloud2',[],[],'geometry_msgs/Pose'};
 
         % Wheelchair {1}:CR, {2}:CR2-----------------------------------------------------------------------------------------
-        % x: Right wheel, y:Left wheel
+        % x:Left wheel, y:Right wheel
+        t_cr = 0.495 % Tread width of CR
         % WhillTopicSubs = {'/Drp5_whill/whill_node/motor_speed','/whill/states/model_cr2'};
         % WhillTopicPubs = {'/Drp5_whill/whill_node/cmd_vel','whill_msgs/ModelCr2State'};
         WhillColOpt = {'red','white'}
@@ -35,6 +36,8 @@ classdef ROS2CommManager < handle
 
         qos_profile = struct("Reliability","reliable","Durability","volatile","History","keeplast","Depth",1)
         gqos_profile = struct("Reliability","besteffort","Durability","volatile","History","keeplast","Depth",1)
+
+        
         
         
     end
@@ -237,7 +240,7 @@ classdef ROS2CommManager < handle
                 obj.msg_cmdvel.twist.angular.z = double(V(2));
             elseif obj.mode == 3
                 obj.msg_cmdvel.linear.x = double(V(1));
-                obj.msg_cmdvel.angular.z = double(V(2));
+                obj.msg_cmdvel.angular.z = double(V(2))*obj.t_cr; % rad/s -> m/s
             end
 
             if obj.cmdMissed >= 5 && obj.mode == 3
