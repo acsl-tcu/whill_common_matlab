@@ -12,6 +12,7 @@ classdef PlantWH < handle
     properties
         Pose
         U
+        Upr
     end
 
     methods
@@ -25,15 +26,19 @@ classdef PlantWH < handle
             obj.Pose.ypr = obj.Pose.y;
             obj.Pose.yawpr = obj.Pose.yaw;
         end
-        function [obj,PlantDATA] = main(obj,Uc)
+        function [obj,PlantDATA] = main(obj,Uc,flag)
             %%%%%% プラントモデルの状態更新
-            obj.Pose.x = obj.Pose.xpr + Uc.V(1)*cos(obj.Pose.yawpr)*obj.dt;
-            obj.Pose.y = obj.Pose.ypr + Uc.V(1)*sin(obj.Pose.yawpr)*obj.dt;
-            obj.Pose.yaw = obj.Pose.yawpr + Uc.V(2)*obj.dt;
-
-            obj.Pose.xpr = obj.Pose.x;
-            obj.Pose.ypr = obj.Pose.y;
-            obj.Pose.yawpr = obj.Pose.yaw;
+            if flag == 1
+                obj.Pose.x = obj.Pose.xpr + Uc.V(1)*cos(obj.Pose.yawpr)*obj.dt;
+                obj.Pose.y = obj.Pose.ypr + Uc.V(1)*sin(obj.Pose.yawpr)*obj.dt;
+                obj.Pose.yaw = obj.Pose.yawpr + Uc.V(2)*obj.dt;
+    
+                obj.Pose.xpr = obj.Pose.x;
+                obj.Pose.ypr = obj.Pose.y;
+                obj.Pose.yawpr = obj.Pose.yaw;
+                obj.Upr.V = Uc.V(1);
+                obj.Upr.W = Uc.V(2);
+            end
 
             PlantDATA.X = obj.Pose.x;
             PlantDATA.Y = obj.Pose.y;
@@ -41,7 +46,8 @@ classdef PlantWH < handle
             PlantDATA.Roll = nan;
             PlantDATA.Pitch = nan;
             PlantDATA.Yaw = obj.Pose.yaw;
-            PlantDATA.odom = [nan,nan];
+            PlantDATA.odom = [obj.Upr.V,obj.Upr.W];
         end
     end
 end
+
