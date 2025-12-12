@@ -3,6 +3,7 @@ classdef NumericalSMMode < mode.ModeStrategy
         plantmodel
         Uc
         init = 1
+        flag
     end
     methods
         function obj = NumericalSMMode(cfg)
@@ -13,15 +14,17 @@ classdef NumericalSMMode < mode.ModeStrategy
         function setup(obj), end
         function [data,Plant] = receiveData(obj)
             data = [];
+            obj.flag = 0;
             if obj.init == 0
                 obj.Uc.V = obj.plantmodel.U;
             end
-            [~,Plant] = obj.plantmodel.main(obj.Uc);
+            [~,Plant] = obj.plantmodel.main(obj.Uc,obj.flag);
             obj.init = 0;
         end
         function exeProcess(~,~), end
         function sendData(obj, cmd)
-            obj.plantmodel = obj.plantmodel.main(cmd);
+            obj.flag = 1;
+            obj.plantmodel = obj.plantmodel.main(cmd,obj.flag);
             obj.plantmodel.U = cmd.V;
         end
         function shutdown(obj)
@@ -30,4 +33,5 @@ classdef NumericalSMMode < mode.ModeStrategy
         end
     end
 end
+
 
