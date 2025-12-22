@@ -36,6 +36,9 @@ classdef EstimateLC < handle
                            'velocitySelector', [0 1 0 0 0 0; 0 0 0 1 0 0; 0 0 0 0 0 0], ...
                            'MeasurementNoise', 0.1*eye(3));
 
+        % -----Compression parameter-------------------------------
+        AngularVelocity = 21000;
+        
         % -----Camera Parameter------------------------------------
         scorethreshold = 0.6;
     end
@@ -63,6 +66,10 @@ classdef EstimateLC < handle
         intrinsics % カメラの内部パラメータ
         tform      % LiDARからカメラへの剛体変換
 
+        preLstamp = 0; % 前フレームのLiDARタイムスタンプ
+
+        idxSet
+        groundPtsIdx
 
         % -----Save flag-------------------------------------------
         pmsSaveFlag = true;
@@ -105,9 +112,9 @@ classdef EstimateLC < handle
             
             persistent  current
             if obj.pmsSaveFlag
-                result.pms_clstPCA = obj.pms_clstPCA;
-                result.pms_map     = obj.pms_ROI;
-                result.pms_JPDAF   = obj.pms_JPDAF;
+                result.pms_clstPCA = {obj.pms_clstPCA};
+                result.pms_map     = {obj.pms_ROI};
+                result.pms_JPDAF   = {obj.pms_JPDAF};
                 obj.pmsSaveFlag = false;
             end
 
@@ -122,8 +129,23 @@ classdef EstimateLC < handle
             current.Z     = Plant.Z;
             current.yaw   = Plant.Yaw;   
 
+            % -----経過時間・時間間隔----------------------------------
             current.time = T;
             current.dt   = current.time - obj.T_old;   % 経過時間間隔を評価
+
+            Lstampnano = num2str(sensordata.LIDAR.header.stamp.nanosec);
+            if length(Lstampnano) ~= 9
+                for i = 1 : 9 - length(Lstampnano)
+                    Lstampnano = ['0' Lstampnano];
+                end
+            end
+            Lstamp = str2double(num2str(sensordata.LIDAR.header.stamp.sec) + "." + Lstampnano); % LiDARタイムスタンプ
+            dtL = Lstamp - obj.preLstamp; % LiDARサンプリング時間
+
+            % -----Z軸圧縮-----------------------------------------------
+            % LiDARの分解能
+            resolution = 360 * obj.AngularVelocity * 0.001 /18750; %手入力ではなく初めから変えてもよし
+            Z_Comp = (tan(deg2rad(2))/tan(deg2rad(resolution)));
 
             % -----Generating MEX function---------------------------------
             if obj.estimatorMexFlag == true
@@ -155,41 +177,49 @@ classdef EstimateLC < handle
             % % if ~isempty(sensordata.SelfPos)
             % % end
 
-             % -----地面点群除去-----------------------------------------------
-            [groundPtsIdx,nonGroundPtCloud,~] = segmentGroundSMRF(ptCloud,'MaxWindowRadius',obj.pms_clstPCA.MaxWindowRadius,...
-                                        'ElevationThreshold',obj.pms_clstPCA.ElevationThreshold,'ElevationScale',obj.pms_clstPCA.ElevationScale);
-            
-            idxSet = 1:ptCloud.Count;
+            if dtL ~=0 % 連続するフレームで点群が同一の場合は処理しない
+                % -----地面点群除去-----------------------------------------------
+                [obj.groundPtsIdx,nonGroundPtCloud,~] = segmentGroundSMRF(ptCloud,'MaxWindowRadius',obj.pms_clstPCA.MaxWindowRadius,...
+                    'ElevationThreshold',obj.pms_clstPCA.ElevationThreshold,'ElevationScale',obj.pms_clstPCA.ElevationScale);
 
-            % -----関心領域内点群切り取り---------------------------------------
-            [pCloudCrop, pCloudLCS] = pcCrop(nonGroundPtCloud,current,obj.pms_ROI);
+                obj.idxSet = 1:ptCloud.Count;
 
-            % -----クラスタリング＋主成分分析-----------------------------------
-            [labels,PCA_PtCloud] = ...
-                clustring_PCA(pCloudCrop,obj.pms_clstPCA);
-            
-            % -----カメラ・LiDARフュージョン-----------------------------------
-            [ObjectData,Objectpt,labels,ObjectData_fromCamera,ObjectData_fromLiDAR] = LiDARcamerafusion(nonGroundPtCloud, pCloudLCS.Location, PCA_PtCloud, camdata, obj.intrinsics, obj.tform, obj.scorethreshold, labels);
-            % 地面除去をした点群(nonGroundPtCloud)(壁などの点群有)と追跡対象のみの点群(PCA_PtCloud)(壁などの点群無)の両方を引数にする．クラスタリングなどの手法は各々で変更してください．
-            % ObjectData_fromCameraとObjectData_fromLiDARは検証用．開発終わったら消して良い．
-            
-            numClusters = size(ObjectData,1);
-            observation = NaN(numClusters,3);
+                % -----関心領域内点群切り取り---------------------------------------
+                [pCloudCrop, pCloudLCS] = pcCrop(nonGroundPtCloud,current,obj.pms_ROI);
 
-            for i = 1 : numClusters
-                PointObject = pointCloud(ObjectData{i,1});
-                if PointObject.Count > 4 && PointObject.Count < 700 %v1_20,7000v2_40,7000
-                    observation(i,1) = mean(PointObject.Location(:,1));
-                    observation(i,2) = mean(PointObject.Location(:,2));
-                    observation(i,3) = mean(PointObject.Location(:,3));
+                % -----クラスタリング＋主成分分析-----------------------------------
+                [labels,PCA_PtCloud] = ...
+                    clustring_PCA(pCloudCrop,obj.pms_clstPCA,Z_Comp);
+
+                % -----カメラ・LiDARフュージョン-----------------------------------
+                [ObjectData,Objectpt,labels,ObjectData_fromCamera,ObjectData_fromLiDAR] = LiDARcamerafusion(nonGroundPtCloud, pCloudLCS.Location, PCA_PtCloud, camdata, obj.intrinsics, obj.tform, obj.scorethreshold, labels,Z_Comp);
+                % 地面除去をした点群(nonGroundPtCloud)(壁などの点群有)と追跡対象のみの点群(PCA_PtCloud)(壁などの点群無)の両方を引数にする．クラスタリングなどの手法は各々で変更してください．
+                % ObjectData_fromCameraとObjectData_fromLiDARは検証用．開発終わったら消して良い．
+
+                numClusters = size(ObjectData,1);
+                observation = NaN(numClusters,3);
+
+                for i = 1 : numClusters
+                    PointObject = pointCloud(ObjectData{i,1});
+                    if PointObject.Count > 4 && PointObject.Count < 700 %v1_20,7000v2_40,7000
+                        observation(i,1) = mean(PointObject.Location(:,1));
+                        observation(i,2) = mean(PointObject.Location(:,2));
+                        observation(i,3) = mean(PointObject.Location(:,3));
+                    end
+                    obsPC{i,1} = PointObject;
                 end
-                obsPC{i,1} = PointObject;
-            end
-    
-            observation = rmmissing(observation);
-            if isempty(observation)
+
+                observation = rmmissing(observation);
+                if isempty(observation)
+                    observation = [];
+                    obsPC{1,1} = [];
+                end
+            else
+                ObjectData = {};
+                ObjectData_fromCamera = {};
+                ObjectData_fromLiDAR = {};
                 observation = [];
-                obsPC{1,1} = [];
+                obsPC = {};
             end
 
             % -----オブジェクト追跡-------------------------------------------
@@ -210,7 +240,7 @@ classdef EstimateLC < handle
             result.plane        = ptCloud;
             result.detection    = detections;
             result.confirmd     = confirmedTracks;
-            result.obstacleIndices  = idxSet(not(groundPtsIdx))';
+            result.obstacleIndices  = obj.idxSet(not(obj.groundPtsIdx))';
             result.pos          = pos;
             result.vel          = vel;
             result.cov          = cov;

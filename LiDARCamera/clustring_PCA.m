@@ -1,4 +1,4 @@
-function [new_labels, point_cloud] = clustring_PCA(ptCloud,pms)
+function [new_labels, point_cloud] = clustring_PCA(ptCloud,pms,Z_Comp)
 %clustring_PCA この関数の概要をここに記述
 %   詳細説明をここに記述
     
@@ -6,10 +6,13 @@ function [new_labels, point_cloud] = clustring_PCA(ptCloud,pms)
     % if not(isempty(ptCloud))
     %     ptCloud = pcdownsample(nonGPClouds,'gridAverage',pms.gridStep);
     % end
-    point_cloud = ptCloud.Location;  
+    point_cloud = ptCloud.Location;
+
+    ptCloud_resolution = [ptCloud.Location(:,1),ptCloud.Location(:,2),ptCloud.Location(:,3)/Z_Comp]; % Z軸圧縮
+
     % -----クラスタリング(少数クラスタの除去)---------------------------
     [labels,numClusters] = ...
-        pcsegdist(ptCloud,pms.minDistance,'NumClusterPoints',pms.numClusterPoints);
+        pcsegdist(pointCloud(ptCloud_resolution),pms.minDistance,'NumClusterPoints',pms.numClusterPoints);
 
     % -----オブジェクトを識別(歩行者点群抽出)---------------------------
     new_labels = double(labels);
