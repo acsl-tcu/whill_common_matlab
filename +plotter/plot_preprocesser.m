@@ -9,13 +9,16 @@ function plot_preprocesser(folderPath,mode)
         Control{i,1} = tmp{i}.Controller;
     end
     
-
-    RawData = struct("LiDAR",[],"GNSS",[],"CAMERA",[], ...
-        "X",[],"Y",[],"Z",[],"Roll",[],"Pitch",[],"Yaw",[],"odom",[]);
-    BaseName = fieldnames(RawData);    
-    if mode == 1 || mode == 0
+    if mode == 1
         numBase = 0;
+    elseif mode == 0
+        RawData = struct("X",[],"Y",[],"Z",[],"Roll",[],"Pitch",[],"Yaw",[],"odom",[]);
+        BaseName = fieldnames(RawData);
+        numBase = numel(BaseName);
     else
+        RawData = struct("LiDAR",[],"GNSS",[],"CAMERA",[], ...
+                "X",[],"Y",[],"Z",[],"Roll",[],"Pitch",[],"Yaw",[],"odom",[]);
+        BaseName = fieldnames(RawData);
         numBase = numel(BaseName);
     end    
     AllEstVarName = fieldnames(Estimate{1,1});
@@ -38,6 +41,14 @@ function plot_preprocesser(folderPath,mode)
             EstResult.(BaseName{8})(n,1) = Estimate{n,1}.Plant.Pitch;
             EstResult.(BaseName{9})(n,1) = Estimate{n,1}.Plant.Yaw;
             EstResult.(BaseName{10})(n,:) = Estimate{n,1}.Plant.odom;
+        elseif mode ~= 1
+            EstResult.(BaseName{1})(n,1) = Estimate{n,1}.Plant.X;
+            EstResult.(BaseName{2})(n,1) = Estimate{n,1}.Plant.Y;
+            EstResult.(BaseName{3})(n,1) = Estimate{n,1}.Plant.Z;
+            EstResult.(BaseName{4})(n,1) = Estimate{n,1}.Plant.Roll;
+            EstResult.(BaseName{5})(n,1) = Estimate{n,1}.Plant.Pitch;
+            EstResult.(BaseName{6})(n,1) = Estimate{n,1}.Plant.Yaw;
+            EstResult.(BaseName{7})(n,:) = Estimate{n,1}.Plant.odom;
         end
         
         for m = 1:numAllEstVar-numBase

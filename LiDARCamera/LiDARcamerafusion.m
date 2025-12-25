@@ -1,4 +1,4 @@
-function [ObjectData,Objectpt,new_labels,ObjectData_fromCamera,ObjectData_fromLiDAR] = LiDARcamerafusion(allptCloud,ptCloudLCS, ptCloud, camdata, intrinsics, tform, scorethreshold, labels)
+function [ObjectData,Objectpt,new_labels,ObjectData_fromCamera,ObjectData_fromLiDAR] = LiDARcamerafusion(allptCloud,ptCloudLCS, ptCloud, camdata, intrinsics, tform, scorethreshold, labels,Z_Comp)
     
     ObjectLidarPoints = [];
     OLPLabels = [];
@@ -55,8 +55,10 @@ function [ObjectData,Objectpt,new_labels,ObjectData_fromCamera,ObjectData_fromLi
                 objectLidarPoints = lidarPointsValid(isObjectPoint, :); % マスク内に存在する点群(カメラを基に抜き出された点群)
     
                 num_obj = num_obj + 1;
+
+                objectLidarPoints_resolution = [objectLidarPoints(:,1),objectLidarPoints(:,2),objectLidarPoints(:,3)/Z_Comp]; % Z軸圧縮
     
-                [objlabels,~] = pcsegdist(pointCloud(objectLidarPoints),0.35);
+                [objlabels,~] = pcsegdist(pointCloud(objectLidarPoints_resolution),0.35);
                 objectLidarPoints = objectLidarPoints(objlabels==mode(objlabels),:);
     
                 ObjectLidarPoints =  [ObjectLidarPoints; objectLidarPoints];
