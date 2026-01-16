@@ -31,8 +31,12 @@ classdef ROS2CommManager < handle
         gWhillMsgtypePubs = {'geometry_msgs/TwistStamped'};
 
         % CR2 Sensor
-        SensorTopicSubsCR2 = {'/combined/cloud/fusion'};
-        SensorMsgTypeSubsCR2 = {'sensor_msgs/PointCloud2'};
+        SensorTopicSubsCR2 = {'/combined/cloud/fusion',
+        '/unilidar/imu/back'
+        };
+        SensorMsgTypeSubsCR2 = {'sensor_msgs/PointCloud2',
+        'sensor_msgs/Imu',
+        };
 
         qos_profile = struct("Reliability","reliable","Durability","volatile","History","keeplast","Depth",1)
         gqos_profile = struct("Reliability","besteffort","Durability","volatile","History","keeplast","Depth",1)
@@ -291,4 +295,5 @@ classdef ROS2CommManager < handle
     end
     
 end
+
 
