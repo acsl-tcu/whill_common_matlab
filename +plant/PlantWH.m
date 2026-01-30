@@ -21,6 +21,8 @@ classdef PlantWH < handle
             obj.Pose.x = 0;
             obj.Pose.y = 0;
             obj.Pose.yaw = 0;
+            obj.Upr.V = 0;
+            obj.Upr.W = 0;
 
             obj.Pose.xpr = obj.Pose.x;
             obj.Pose.ypr = obj.Pose.y;
@@ -50,4 +52,5 @@ classdef PlantWH < handle
         end
     end
 end
+
 
