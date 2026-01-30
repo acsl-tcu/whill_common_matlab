@@ -232,7 +232,8 @@ classdef EstimateLC < handle
             PlotTrackingResult(obj.trackP,obj.detectionP,confirmedTracks,pos,vel,cov,meas,measCov,current);
 
             % -----Data update---------------------------------------------
-            obj.T_old           = current.time;
+            obj.T_old     = current.time;
+            obj.preLstamp = Lstamp;
             
             % save data
             result.xhat = obj.Allxhat; % example
