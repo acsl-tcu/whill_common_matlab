@@ -8,17 +8,19 @@ conf.fpath = split(path, conf.mk(conf.pc));
 conf.fcheck= and(~contains(conf.fpath, matlabroot), ~contains(conf.fpath, conf.def));
 rmpath(strjoin(conf.fpath(conf.fcheck), conf.mk(conf.pc)));
 %% Sensor configurations
-vehicleType = 1; % 1:CR1, 2:CR2
-vehicleColor = 'red'; % Only EXP. 'red' or 'white'
+vehicleType = 1; % 1:CR & Gazebo, 2:CR2 (EXP Only)
+vehicleColor = 'red'; % EXP Only 'red'\'white'\'blue'\'green'
 sensor(1) = true; % LiDAR
 sensor(2) = false; % GNSS
 sensor(3) = false; % Camera
-sensor(4) = true; % SLAM
-sensor(5) = false; % Matching (Only EXP)
+sensor(4) = false; % SLAM
+sensor(5) = true; % Matching (EXP Only)
+sensor(6) = false; % IMU (CR2 Only)
 base_sensor = 1; % Standard sensor you use mainly. No standard:0, LiDAR:1, GNSS:2, Camera:3
 %% Timer configurations
 tspan = 0.05; %(sec) Sensor frequency which is corresponded to standard sensor
-overrunAct = 'slip'; % 'slip'(recommend) or 'drop'
+overrunAct = 'slip'; % 'slip'(recommend) or 'drop': Action when control cycle delays occur
+% See: https://jp.mathworks.com/help/robotics/ref/ratecontrol.html
 %% Mode configurations
 mode = 3; % 0:Numerical simulation, 1:Offline, 2:Gazebo simulation, 3:Real exp.
 % Offline: Path to MAT file
@@ -43,11 +45,14 @@ cameraparamPath = "./cameracalibparam/internal_param_fix.mat";
 % You can supply your own class instead of default if you need.
 % addpath(genpath("./MyEstimate"))
 plantcontainer = plant.PlantWH();
-estimator = estimator.Estimate2(mode,offlinePath);
+% estimator = estimator.Estimate2(mode,offlinePath);
+addpath(genpath("./JPDAF_tracker"))
+estimator = estimator.EstimateJPDAF(mode,offlinePath);
 % Camera LiDAR Fusion package
 % addpath(genpath("./LiDARCamera"))
 % estimator = estimator.EstimateLC(mode,offlinePath,calibparamPath,cameraparamPath);
-controller = controller.Control2();
+% controller = controller.Control2();
+controller = controller.ControlPurePursuit();
 logger = logger.DataLogger(Datadir,'tmp');
 
 % Activation paralell worker
@@ -78,4 +83,3 @@ sys.run();
 
 %% Plot
 plotter.DataPlotter(Datadir,cfg)
-

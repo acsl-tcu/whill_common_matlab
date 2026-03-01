@@ -32,7 +32,7 @@ classdef SensorFetcher < handle
         function [data,Plant] = getSensorData(obj,sensorSubs,whillSubs)
             % subscriberからセンサ値を取得
             doProcessing = 0;
-            data = struct("LIDAR",[],"GNSS",[],"CAMERA",[]);
+            data = struct("LIDAR",[],"GNSS",[],"CAMERA",[],"IMU",[]);
             Plant = struct("X",[.0],"Y",[.0],"Z",[.0], ...
                 "Roll",[.0],"Pitch",[.0],"Yaw",[.0],"odom",[.0]);
             if obj.mode == 1
@@ -44,6 +44,7 @@ classdef SensorFetcher < handle
             tStart = tic;
             while toc(tStart) < obj.timeout %true 
                 whillret = whillSubs.LatestMessage;
+                ret = cell(size(sensorSubs));
                 if ~isempty(sensorSubs{1})
                     ret{1} = sensorSubs{1}.LatestMessage;
                 end
@@ -71,20 +72,10 @@ classdef SensorFetcher < handle
                         Plant.odom(3) = Plant.odom(1) - (obj.t_cr/2) * Plant.odom(2); % LeftMSpeed
                         Plant.odom(4) = Plant.odom(1) + (obj.t_cr/2) * Plant.odom(2); % RightMSpeed
                     case 3
-                        switch obj.vehicleType
-                            case 1
-                                Plant.odom(1) = (-whillret.x + whillret.y) * 1000/3600 / 2; % V (m/s)
-                                Plant.odom(2) = -(whillret.x + whillret.y) * 1000/3600 / obj.t_cr; % Omega (rad/s)
-                                Plant.odom(3) = whillret.x * 1000/3600; % LeftMSpeed
-                                Plant.odom(4) = whillret.y * 1000/3600; % RightMSpeed                                
-                            case 2
-                                Plant.odom(1) = whillret.right_motor_speed; % RightMSpeed
-                                Plant.odom(2) = whillret.left_motor_speed; % LeftMSpeed
-                                Plant.odom(3) = whillret.right_motor_angle; % RightMAngle
-                                Plant.odom(4) = whillret.left_motor_angle; % LeftMAngle
-                            otherwise 
-                                error(strcat('No type such a ',obj.vehicleType))
-                        end
+                        Plant.odom(1) = (-whillret.x + whillret.y) * 1000/3600 / 2; % V (m/s)
+                        Plant.odom(2) = -(whillret.x + whillret.y) * 1000/3600 / obj.t_cr; % Omega (rad/s)
+                        Plant.odom(3) = whillret.x * 1000/3600; % LeftMSpeed
+                        Plant.odom(4) = whillret.y * 1000/3600; % RightMSpeed
                     otherwise
                         error(strcat(strcat('Invalid sensor index in mode',obj.mode)))
 
@@ -103,8 +94,6 @@ classdef SensorFetcher < handle
                 doProcessing = 1;
             end
             if (obj.sensorIdx(4)|| obj.sensorIdx(5) || obj.mode==2) && (~isempty(ret{4}) || ~isempty(ret{5}))
-                % temp = Localizer.main(rosReadXYZ(data.LIDAR));
-                % data.SelfPos = temp.Matching_pose.Translation;
                 if obj.mode==2
                     Plant.X = ret{4}.position.x;
                     Plant.Y = ret{4}.position.y;

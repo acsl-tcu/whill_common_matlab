@@ -16,7 +16,7 @@ function plot_preprocesser(folderPath,mode)
         BaseName = fieldnames(RawData);
         numBase = numel(BaseName);
     else
-        RawData = struct("LiDAR",[],"GNSS",[],"CAMERA",[], ...
+        RawData = struct("LiDAR",[],"GNSS",[],"CAMERA",[],"IMU",[],...
                 "X",[],"Y",[],"Z",[],"Roll",[],"Pitch",[],"Yaw",[],"odom",[]);
         BaseName = fieldnames(RawData);
         numBase = numel(BaseName);
@@ -34,13 +34,14 @@ function plot_preprocesser(folderPath,mode)
             EstResult.(BaseName{1}){n,1} = Estimate{n,1}.RawData.LIDAR;
             EstResult.(BaseName{2}){n,1} = Estimate{n,1}.RawData.GNSS;
             EstResult.(BaseName{3}){n,1} = Estimate{n,1}.RawData.CAMERA;
-            EstResult.(BaseName{4})(n,1) = Estimate{n,1}.Plant.X;
-            EstResult.(BaseName{5})(n,1) = Estimate{n,1}.Plant.Y;
-            EstResult.(BaseName{6})(n,1) = Estimate{n,1}.Plant.Z;
-            EstResult.(BaseName{7})(n,1) = Estimate{n,1}.Plant.Roll;
-            EstResult.(BaseName{8})(n,1) = Estimate{n,1}.Plant.Pitch;
-            EstResult.(BaseName{9})(n,1) = Estimate{n,1}.Plant.Yaw;
-            EstResult.(BaseName{10})(n,:) = Estimate{n,1}.Plant.odom;
+            EstResult.(BaseName{4}){n,1} = Estimate{n,1}.RawData.IMU;
+            EstResult.(BaseName{5})(n,1) = Estimate{n,1}.Plant.X;
+            EstResult.(BaseName{6})(n,1) = Estimate{n,1}.Plant.Y;
+            EstResult.(BaseName{7})(n,1) = Estimate{n,1}.Plant.Z;
+            EstResult.(BaseName{8})(n,1) = Estimate{n,1}.Plant.Roll;
+            EstResult.(BaseName{9})(n,1) = Estimate{n,1}.Plant.Pitch;
+            EstResult.(BaseName{10})(n,1) = Estimate{n,1}.Plant.Yaw;
+            EstResult.(BaseName{11})(n,:) = Estimate{n,1}.Plant.odom;
         elseif mode ~= 1
             EstResult.(BaseName{1})(n,1) = Estimate{n,1}.Plant.X;
             EstResult.(BaseName{2})(n,1) = Estimate{n,1}.Plant.Y;
