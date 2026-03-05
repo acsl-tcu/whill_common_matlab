@@ -7,16 +7,18 @@ conf.usr= pwd;
 conf.fpath = split(path, conf.mk(conf.pc));
 conf.fcheck= and(~contains(conf.fpath, matlabroot), ~contains(conf.fpath, conf.def));
 rmpath(strjoin(conf.fpath(conf.fcheck), conf.mk(conf.pc)));
-%% Sensor configurations
-vehicleType = 1; % 1:CR & Gazebo, 2:CR2 (EXP Only)
-vehicleColor = 'red'; % EXP Only 'red'\'white'\'blue'\'green'
-sensor(1) = true; % LiDAR
-sensor(2) = false; % GNSS
-sensor(3) = false; % Camera
-sensor(4) = false; % SLAM
-sensor(5) = true; % Matching (EXP Only)
-sensor(6) = false; % IMU (CR2 Only)
-base_sensor = 1; % Standard sensor you use mainly. No standard:0, LiDAR:1, GNSS:2, Camera:3
+%% Control target
+vehicleInfo.type = "CR"; % "CR", "CR2", "Go2", "CR-SIP", etc.
+%% Sensor configurations (Vehicle-specific options)
+vehicleInfo.color = 'red'; % CR series EXP Only 'red'\'white'\'blue'\'green'
+vehicleInfo.sensor(1) = true; % LiDAR
+vehicleInfo.sensor(2) = false; % GNSS
+vehicleInfo.sensor(3) = false; % Camera
+vehicleInfo.sensor(4) = false; % SLAM
+vehicleInfo.sensor(5) = true; % Matching (EXP Only)
+vehicleInfo.sensor(6) = false; % IMU (CR2 Only)
+vehicleInfo.base_sensor = 1; % Standard sensor you use mainly. No standard:0, LiDAR:1, GNSS:2, Camera:3
+vehicleInfo.manualCon = false; % Enable Manual Control using Joystick (CR Only)
 %% Timer configurations
 tspan = 0.05; %(sec) Sensor frequency which is corresponded to standard sensor
 overrunAct = 'slip'; % 'slip'(recommend) or 'drop': Action when control cycle delays occur
@@ -29,8 +31,6 @@ offlinePath = "/path/to/your/userLocal.mat";
 tend = 20; % Offline: If NO MAT file is loaded, set any time value (sec).
 %% ROS2 configurations
 RID = 11;
-%% Enable Manual Control using Joystick
-manualCon = false;
 %% Module configurations
 % Save file path
 mySavePath = './data';
@@ -63,10 +63,7 @@ cfg = struct( ...
     "isParallel"  , false, ...
     "isMultiPC"   , false, ...
     "RID"         , RID, ...
-    "sensorIdx"   , sensor, ...
-    "base_sensor" , base_sensor, ...
-    "vehicleType" , vehicleType, ...
-    "vehicleColor", vehicleColor, ...
+    "vehicleInfo" , vehicleInfo, ...
     "tspan"       , tspan, ...
     "offlinePath" , offlinePath, ...
     "tend"        , tend, ...
@@ -75,7 +72,6 @@ cfg = struct( ...
     "estimator"   , estimator, ...
     "controller"  , controller, ...
     "logger"      , logger, ...
-    "manualCon"   , manualCon, ...
     "overrunAct"  , overrunAct);
 
 sys = core.SystemFactory.build(cfg);

@@ -1,4 +1,4 @@
-classdef SensorFetcher_CR2 < handle
+classdef SensorFetcher < handle
     % 各センサデータのメッセージをsubscriberから受け取る
 
     properties
@@ -19,11 +19,10 @@ classdef SensorFetcher_CR2 < handle
     end
 
     methods
-        function obj = SensorFetcher_CR2(mode,vehicleType,sensorIdx,baseSens)
-            obj.mode = mode;
-            obj.vehicleType = vehicleType;
-            obj.sensorIdx = sensorIdx;
-            obj.baseSensor = baseSens;
+        function obj = SensorFetcher(cfg)
+            obj.mode = cfg.modeNumber;
+            obj.sensorIdx = cfg.vehicleInfo.sensor;
+            obj.baseSensor = cfg.vehicleInfo.base_sensor;
             if obj.baseSensor == 0
                 obj.nostd = 1;
             end
@@ -43,7 +42,7 @@ classdef SensorFetcher_CR2 < handle
             end
             tStart = tic;
             while toc(tStart) < obj.timeout %true
-                whillret = whillSubs.LatestMessage;
+                whillret = whillSubs{1}.LatestMessage;
                 ret = cell(size(sensorSubs));
                 if ~isempty(sensorSubs{1}) % LiDAR
                     ret{1} = sensorSubs{1}.LatestMessage;
@@ -116,6 +115,9 @@ classdef SensorFetcher_CR2 < handle
                 obj.prevAngle.Yaw = tmpAngle.Yaw;
                 obj.prevAngle.Pitch = tmpAngle.Pitch;
                 obj.prevAngle.Roll = tmpAngle.Roll;
+            end
+            if obj.sensorIdx(6) && ~isempty(ret{6})
+                data.IMU = ret{6};
             end
             if doProcessing
                 data.CAMERA.processed_masks = camera_postProcess(data.CAMERA);
