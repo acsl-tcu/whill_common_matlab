@@ -92,14 +92,10 @@ classdef ROS2CommManager < bridge.ROS2CommStrategy
 
         function msg = createVehicleCommand(obj, cmd)
             V = cmd.V;
+            msg = obj.vehicleMsg;
             % seq = cmd.sequence;
-            if obj.mode == 2
-                msg.twist.linear.x = double(V(1));
-                msg.twist.angular.z = double(V(2));
-            elseif obj.mode == 3
-                msg.linear.x = double(V(1));
-                msg.angular.z = double(V(2));
-            end
+            msg.linear.x = double(V(1));
+            msg.angular.z = double(V(2));
         end
 
         function cmd = createSafetyStopCommand(obj)
