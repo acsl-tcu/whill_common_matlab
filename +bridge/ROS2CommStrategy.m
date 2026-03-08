@@ -73,7 +73,7 @@ classdef (Abstract) ROS2CommStrategy < handle
             obj.sensorSubs = cell(n,1);
             
             for i = 1:n
-                if ~isempty(topics{i})
+                if ~isempty(topics{i}) && obj.sensorIdx(i)
                     qos = obj.getQoSProfile('sensorSubs'); % 機体固有メソッドを呼び出し
                     obj.sensorSubs{i} = ros2subscriber(obj.node, ...
                         topics{i}, msgTypes{i}, ...

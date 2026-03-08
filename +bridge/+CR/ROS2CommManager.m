@@ -98,6 +98,7 @@ classdef ROS2CommManager < bridge.ROS2CommStrategy
                     qos = obj.BESTEFFORT_QOS;                    
                     if strcmp(topicType,'vehiclePubs')
                         qos.Reliability = "reliable"; % Fixing for sfm gazebo
+                        qos.Depth = 10;
                     end
                 case 3
                     qos = obj.DEFAULT_QOS;

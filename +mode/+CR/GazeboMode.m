@@ -11,6 +11,7 @@ classdef GazeboMode < mode.ModeStrategy
             setenv('RMW_IMPLEMENTATION','rmw_cyclonedds_cpp')
             setenv("FASTDDS_BUILTIN_TRANSPORTS","UDPv4")
             setenv("ROS_LOCALHOST_ONLY","1")
+            cfg.vehicleInfo.sensor(4) = true;
             obj.Comm = bridge.CR.ROS2CommManager(cfg,2);
         end
         function setup(obj)
