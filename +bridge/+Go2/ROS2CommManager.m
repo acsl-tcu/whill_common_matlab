@@ -5,6 +5,7 @@ classdef ROS2CommManager < bridge.ROS2CommStrategy
     end
 
     properties
+        move_cmd
 
     end
 
@@ -15,6 +16,9 @@ classdef ROS2CommManager < bridge.ROS2CommStrategy
             
             % センサデータの収集クラス
             obj.sensorFetcher = bridge.Go2.SensorFetcher(cfg);
+            
+            % Sport Mode Option
+            obj.move_cmd = cfg.vehicleInfo.ROBOT_SPORT_API_ID_MOVE;
         end
         
         %% 必須メソッドの定義
@@ -116,7 +120,7 @@ classdef ROS2CommManager < bridge.ROS2CommStrategy
             elseif obj.mode == 3
                 param=struct('x',V(1),'y',V(2),'z',V(3));
                 msg.parameter=jsonencode(param);
-                msg.header.identity.api_id = int64(1008);
+                msg.header.identity.api_id = obj.move_cmd;
             end
         end
 

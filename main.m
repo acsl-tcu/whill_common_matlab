@@ -11,6 +11,7 @@ rmpath(strjoin(conf.fpath(conf.fcheck), conf.mk(conf.pc)));
 vehicleInfo.type = "CR"; % "CR", "CR2", "Go2", "CR-SIP", etc.
 %% Sensor configurations (Vehicle-specific options)
 vehicleInfo.color = 'red'; % CR series EXP Only 'red'\'white'\'blue'\'green'
+vehicleInfo.ROBOT_SPORT_API_ID_MOVE = int64(1008); % Go2 Only
 vehicleInfo.sensor(1) = true; % LiDAR
 vehicleInfo.sensor(2) = false; % GNSS
 vehicleInfo.sensor(3) = false; % Camera

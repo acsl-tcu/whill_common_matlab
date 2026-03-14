@@ -29,6 +29,9 @@ classdef RealMode < mode.ModeStrategy
             if ~obj.manual, obj.Comm.sendVehicleCommand(cmd); end
         end
         function shutdown(obj)
+            cmd.V = [0;0;0];
+            cmd.sequence = 0;
+            obj.Comm.sendVehicleCommand(cmd) % 入力を0にする
             Spr = utils.SpinnerStatus('Shutting down the ROS2 node. This process will take 5 seconds...');
             close(findall(groot, 'Type', 'figure'));
             rosshutdown

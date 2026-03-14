@@ -8,7 +8,7 @@ classdef GazeboMode < mode.ModeStrategy
     methods
         function obj = GazeboMode(cfg)
             disp("Setting up ROS2 configuration for Gazebo mode")
-            setenv('RMW_IMPLEMENTATION','rmw_cyclonedds_cpp')
+            % setenv('RMW_IMPLEMENTATION','rmw_cyclonedds_cpp')
             % setenv("FASTDDS_BUILTIN_TRANSPORTS","UDPv4")
             setenv("ROS_LOCALHOST_ONLY","1")
             obj.Comm = bridge.Go2.ROS2CommManager(cfg,2);
@@ -30,6 +30,9 @@ classdef GazeboMode < mode.ModeStrategy
             obj.Comm.sendVehicleCommand(cmd);
         end
         function shutdown(obj)
+            cmd.V = [0;0;0];
+            cmd.sequence = 0;
+            obj.Comm.sendVehicleCommand(cmd) % 入力を0にする
             Spr = utils.SpinnerStatus('Shutting down the ROS2 node. This process will take 5 seconds...');
             close(findall(groot, 'Type', 'figure'));
             rosshutdown
