@@ -32,7 +32,7 @@ classdef SensorFetcher < handle
             doProcessing = 0;
             data = struct("LIDAR",[],"GNSS",[],"CAMERA",[],"IMU",[]);
             Plant = struct("X",[.0],"Y",[.0],"Z",[.0], ...
-                "Roll",[.0],"Pitch",[.0],"Yaw",[.0],"odom",[.0]);
+                "Roll",[.0],"Pitch",[.0],"Yaw",[.0],"odom",[0, 0, 0, 0]);
             if obj.mode == 1
                 return;
             end
@@ -40,9 +40,9 @@ classdef SensorFetcher < handle
                 error("Localizer need to LiDAR. Please confirm LiDAR's sensor-index is true.")   
             end
             tStart = tic;
+            ret = cell(size(sensorSubs));
             while toc(tStart) < obj.timeout %true 
-                whillret = whillSubs{1}.LatestMessage;
-                ret = cell(size(sensorSubs));
+                whillret = whillSubs{1}.LatestMessage;                
                 if ~isempty(sensorSubs{1})
                     ret{1} = sensorSubs{1}.LatestMessage;
                 end

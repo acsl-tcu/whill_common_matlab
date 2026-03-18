@@ -25,6 +25,7 @@ classdef ControllerApp < handle
             obj.CmdSHM = bridge.SharedMem(fname+"cmd.bin",obj.checkBin,obj.ctrlVars);
             obj.EstSHM  = bridge.SharedMem(fname+"est.bin",obj.checkBin);            
             obj.Timer  = rateControl(1/cfg.tspan);
+            obj.Timer.OverrunAction = cfg.overrunAct;
             obj.DLog = cfg.logger;
             obj.SMgr = session.SessionManager.build(cfg,session.SessionManager.participant);
         end
