@@ -6,11 +6,11 @@ classdef NodeMgrApp < handle
         Timer
         DLog
         SMgr
-        % TimerCB
         cmd
         checkBin = 1;
     end
     properties (Constant)
+        % ROS2 topic で受け取るデータを型毎に最大サイズで定義
         sensorVars = {
                      'LIDAR',       'single',   [35000 3];
                      'Ldr_sec',     'int32',    [1,1];
@@ -32,7 +32,8 @@ classdef NodeMgrApp < handle
     methods
         function obj = NodeMgrApp(cfg)
             % I/O mode
-            obj.Mode = mode.ModeFactory.build(cfg);
+            factory = mode.CR.CRFactory(); % 機体毎のセットアップ
+            obj.Mode = factory.build(cfg);
             % SHM
             fname = strcat(tempdir,cfg.sharedMemKey);
             obj.CmdSHM  = bridge.SharedMem(fname+"cmd.bin",obj.checkBin);
@@ -40,22 +41,12 @@ classdef NodeMgrApp < handle
             obj.Timer  = rateControl(1/cfg.tspan);
             obj.DLog = cfg.logger;
             obj.SMgr = session.SessionManager.build(cfg,session.SessionManager.initiator);
-            % % Timer callback configuration
-            % delete(timerfindall)
-            % obj.TimerCB = timer( ...
-            %     'ExecutionMode','fixedRate', ...
-            %     'Period',        cfg.tspan, ...
-            %     'BusyMode',      'drop', ...
-            %     'TimerFcn',      @(~,~)obj.step(), ...
-            %     'ErrorFcn',      @(~,~)obj.err(), ...
-            %     'StopFcn',       @(~,~)obj.stop());
         end
         function run(obj)
             c = onCleanup(@()obj.Mode.shutdown());
             obj.Mode.setup();
             obj.SMgr.start();
             reset(obj.Timer)
-            % start(obj.TimerCB)
             while obj.SMgr.Stopper.UserData
                 [sens,Plant] = obj.Mode.receiveData();
                 result.sequence_sens = obj.SensSHM.write(obj.encodeSensor(sens,Plant));
@@ -72,7 +63,7 @@ classdef NodeMgrApp < handle
                 result.T = posixtime(datetime('now','TimeZone','local'));
                 obj.DLog.addData(result)
                 drawnow limitrate
-                waitfor(obj.Timer)
+                waitfor(obj.Timer);
             end
             obj.SMgr.stop();
             disp('Exporting data.');
@@ -81,39 +72,8 @@ classdef NodeMgrApp < handle
         end
     end
     methods(Access=private)
-        % function step(obj,~,~)
-        %     if ~obj.SMgr.Stopper.UserData, stop(obj.TimerCB); end
-        %     [sens,Plant] = obj.Mode.receiveData();
-        %     result.sequence_sens = obj.SensSHM.write(obj.encodeSensor(sens,Plant));
-        %     [currentCmd, ok] = obj.CmdSHM.read();
-        %     if ok
-        %         obj.cmd = currentCmd;
-        %         obj.Mode.sendData(obj.cmd);
-        %         result.sequence_cmd = obj.cmd.sequence;
-        %     elseif ~isempty(obj.cmd)
-        %         result.sequence_cmd = obj.cmd.sequence;
-        %     else
-        %         result.sequence_cmd = uint32(0);
-        %     end
-        %     result.T = posixtime(datetime('now','TimeZone','local'));
-        %     obj.DLog.addData(result)
-        %     drawnow
-        % end
-        % % function start(obj,~,~)
-        % % 
-        % % end
-        % function stop(obj,~,~)
-        %     c = onCleanup(@()obj.Mode.shutdown());
-        %     obj.SMgr.stop();
-        %     disp('Exporting data.');
-        %     obj.DLog.stop();
-        %     disp('Node session has done.')
-        %     delete(obj.TimerCB)
-        % end
-        % function err(obj,~,~)
-        %     disp('Error has detected. Stop the system.')
-        % end
         function d = encodeSensor(obj, sensor, Plant)
+            % 共有メモリ用にデータを構造体にまとめる
             names = obj.sensorVars(:,1);
         
             % --- LIDAR ---

@@ -9,43 +9,34 @@ conf.fcheck= and(~contains(conf.fpath, matlabroot), ~contains(conf.fpath, conf.d
 rmpath(strjoin(conf.fpath(conf.fcheck), conf.mk(conf.pc)));
 addpath(conf.usr);
 
+% Control target
+vehicleInfo.type = "CR";
+
 % Sensor configurations
-vehicleType = 1; % 1:CR1, 2:CR2
-vehicleColor = 'red'; % Only EXP. 'red' or 'white'
-sensor(1) = true; % LiDAR
-sensor(2) = false; % GNSS
-sensor(3) = false; % Camera
-sensor(4) = true; % SLAM/Localization
-sensor(5) = false; % Matching (Only EXP)
-base_sensor = 1; % Standard sensor you use mainly. No standard:0, LiDAR:1, GNSS:2, Camera:3
-tspan = 0.05; % Sensor frequency which is corresponded to standard sensor
-overrunAct = 'slip'; % 'slip'(recommend) or 'drop'
+vehicleInfo.color = 'red'; % CR series EXP Only 'red'\'white'\'blue'\'green'
+vehicleInfo.sensor(1) = true; % LiDAR
+vehicleInfo.sensor(2) = false; % GNSS
+vehicleInfo.sensor(3) = false; % Camera
+vehicleInfo.sensor(4) = false; % SLAM
+vehicleInfo.sensor(5) = true; % Matching (EXP Only)
+vehicleInfo.sensor(6) = false; % IMU (CR2 Only)
+vehicleInfo.base_sensor = 1; % Standard sensor you use mainly. No standard:0, LiDAR:1, GNSS:2, Camera:3
+vehicleInfo.manualCon = false; % Enable Manual Control using Joystick (CR Only)
 
 % Mode configurations
-mode = 3; % 1:Offline, 2:Gazebo simulation, 3:Real exp.
-offlinePath = "/home/student/Program/matlab_common/data/20250613/20250613_171110/userLocal.mat";
+mode = 3; % 2:Gazebo simulation, 3:Real exp.
 
 % ROS2 configurations
 RID = 11;
-
-% Enable Manual Control using Joystick
-manualCon = false;
 
 cfg = struct( ...
     "modeNumber"  , mode, ...
     "isParallel"  , true, ...
     "isMultiPC"   , false, ...
     "RID"         , RID, ...
-    "sensorIdx"   , sensor, ...
-    "base_sensor" , base_sensor, ...
-    "vehicleType" , vehicleType, ...
-    "vehicleColor", vehicleColor, ...
-    "tspan"       , tspan, ...
-    "offlinePath" , offlinePath, ...
+    "vehicleInfo" , vehicleInfo, ...
     "sharedMemKey", "matlab_SHM_", ...
-    "rosNamespace", "matlab", ...
-    "manualCon"   , false, ...
-    "overrunAct"  , overrunAct);
+    "rosNamespace", "matlab");
 
 % Save file path
 mySavePath = './data';
@@ -57,8 +48,14 @@ if ~exist(Datadir,"dir"), mkdir(Datadir); end
 %% NodeMgr session
 clc; close all;
 clear app
+
+cfg.tspan = 0.05; % Sensor frequency which is corresponded to standard sensor
+cfg.overrunAct = 'slip'; % 'slip'(recommend) or 'drop'
 cfg.logger = logger.DataLogger(Datadir,"Node");
-app = app.NodeMgrApp(cfg);
+
+% Run app
+NodeApp = "app." + vehicleInfo.type + ".NodeMgrApp";
+app = feval(NodeApp, cfg);
 app.run();
 
 %% Estimator session
@@ -66,10 +63,18 @@ clc; close all;
 clear app
 % Activation paralell worker
 % if isempty(gcp('nocreate')), parpool; end
+
+cfg.tspan = 0.05; % Session frequency
+cfg.overrunAct = 'slip'; % 'slip'(recommend) or 'drop'
+
+offlinePath = "path/to/your/userLocal.mat"; % No use but needed
 % addpath(genpath("./MyPkg"))
 cfg.estimator = estimator.Estimate2(mode,offlinePath);
 cfg.logger = logger.DataLogger(Datadir,"Estimate");
-app = app.EstimatorApp(cfg);
+
+% Run app
+EstApp = "app." + vehicleInfo.type + ".EstimatorApp";
+app = feval(EstApp, cfg);
 app.run();
 
 %% Controller session
@@ -77,15 +82,21 @@ clc; close all;
 clear app
 % Activation paralell worker
 % if isempty(gcp('nocreate')), parpool; end
+
+cfg.tspan = 0.05; % Session frequency
+cfg.overrunAct = 'slip'; % 'slip'(recommend) or 'drop'
+
 % addpath(genpath("./MyPkg"))
 cfg.controller = controller.Control2();
 cfg.logger = logger.DataLogger(Datadir,"Control");
-app = app.ControllerApp(cfg);
+
+% Run app
+CtrlApp = "app." + vehicleInfo.type + ".ControllerApp";
+app = feval(CtrlApp, cfg);
 app.run();
 
 %% Plot result
 plotter.DataPlotter(Datadir,cfg)
-
 
 
 %% Delete SHM
