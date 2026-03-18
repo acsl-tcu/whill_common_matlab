@@ -6,9 +6,9 @@ classdef RealMode < mode.ModeStrategy
     methods
         function obj = RealMode(cfg)
             disp("Setting up ROS2 configuration for experiment mode")
-            setenv('RMW_IMPLEMENTATION','rmw_fastrtps_cpp')
-            setenv("FASTDDS_BUILTIN_TRANSPORTS","UDPv4") % Avoid SHM communication
-            setenv("ROS_LOCALHOST_ONLY","0")
+            % setenv('RMW_IMPLEMENTATION','rmw_fastrtps_cpp')
+            % setenv("FASTDDS_BUILTIN_TRANSPORTS","UDPv4") % Avoid SHM communication
+            % setenv("ROS_LOCALHOST_ONLY","0")
             obj.Comm = bridge.CR2.ROS2CommManager(cfg,3);
             obj.manual = cfg.vehicleInfo.manualCon;
         end

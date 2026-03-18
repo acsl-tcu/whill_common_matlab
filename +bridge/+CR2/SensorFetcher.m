@@ -92,13 +92,13 @@ classdef SensorFetcher < handle
             end
             if (obj.sensorIdx(4)) && (~isempty(ret{4}))
                 % CR2 LiDARと車椅子座標系の向きが異なるため以下の設定
-                Plant.X = -ret{3}.pose.pose.position.z;
-                Plant.Y = ret{3}.pose.pose.position.y;
-                Plant.Z = -ret{3}.pose.pose.position.x;
-                ang(1) = ret{3}.pose.pose.orientation.w;
-                ang(2) = ret{3}.pose.pose.orientation.x;
-                ang(3) = ret{3}.pose.pose.orientation.y;
-                ang(4) = ret{3}.pose.pose.orientation.z;                
+                Plant.X = -ret{4}.pose.pose.position.z;
+                Plant.Y = ret{4}.pose.pose.position.y;
+                Plant.Z = -ret{4}.pose.pose.position.x;
+                ang(1) = ret{4}.pose.pose.orientation.w;
+                ang(2) = ret{4}.pose.pose.orientation.x;
+                ang(3) = ret{4}.pose.pose.orientation.y;
+                ang(4) = ret{4}.pose.pose.orientation.z;                
                 eul = quat2eul(ang,"ZYX");
 
                 % CR2 LiDARと車椅子座標系の向きが異なるため以下の設定

@@ -51,7 +51,7 @@ classdef ROS2CommManager < bridge.ROS2CommStrategy
         function topics = getVehiclePubsTopics(obj)
             % Publishするビークルのトピックを定義
             % Real Exp.
-            topics = {'whill_msgs/ModelCr2State'};
+            topics = {'/whill/controller/cmd_vel'};
             % topics = setWhillColor(obj,topics);
         end
 
