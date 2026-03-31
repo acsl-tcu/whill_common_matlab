@@ -4,7 +4,7 @@ function [ObjectData,Objectpt,new_labels,ObjectData_fromCamera,ObjectData_fromLi
     OLPLabels = [];
     ObjectData_fromCamera = {};
     ObjectData_fromLiDAR = {};
-    ObjectData = {};
+    ObjectData = {}; % 物体情報
     
     [~, validIndex] = projectLidarPointsOnImage(allptCloud, intrinsics, tform);
     
@@ -13,7 +13,7 @@ function [ObjectData,Objectpt,new_labels,ObjectData_fromCamera,ObjectData_fromLi
     if ~isempty(ptCloudLCS)
         [imagePoints, validIndex] = projectLidarPointsOnImage(ptCloudLCS, intrinsics, tform);
         
-        lidarPoints = ptCloudLCS(validIndex, :);
+        lidarPoints = ptCloudLCS(validIndex, :); % LiDAR点群
     
         if isempty(camdata)
             num_de = 0;
@@ -24,6 +24,7 @@ function [ObjectData,Objectpt,new_labels,ObjectData_fromCamera,ObjectData_fromLi
         num_clus = length(labelsidx);
         num_obj = 0;
     
+        % カメラの画角内の物体情報を保存
         for ig = 1 : num_de
             if camdata.detections(ig).score>=scorethreshold
     
@@ -76,6 +77,7 @@ function [ObjectData,Objectpt,new_labels,ObjectData_fromCamera,ObjectData_fromLi
         
         num_obj = 0;
     
+         % 全体の画角内の物体情報を保存
         for i = 1 : num_clus
             clusterptCloudLCS = pointCloud(ptCloudLCS(labels==labelsidx(i),:)); % クラスタ点群
             if ~isempty(ObjectLidarPoints) % カメラの画角内に点群が存在するか
@@ -158,6 +160,8 @@ function [ObjectData,Objectpt,new_labels,ObjectData_fromCamera,ObjectData_fromLi
             end
         end
     end
+
+    % 同じカメラ情報を持つ物体をまとめる
     if any(any(~cellfun(@isempty, ObjectData)))
         obj4 = ObjectData(:,4);
         isEmpty = cellfun(@isempty, obj4);
@@ -189,6 +193,8 @@ function [ObjectData,Objectpt,new_labels,ObjectData_fromCamera,ObjectData_fromLi
     else
         Objectpt = [];
     end
+
+    % ラベルの保存
     new_labels = zeros(size(Objectpt,1),1);
     labelsstart = 1;
     labelsend = 0;
